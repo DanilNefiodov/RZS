@@ -14,7 +14,11 @@ public interface GameRepository {
 
     List<Game> findAll();
 
+    List<Game> findByGenre(String genre);
+
     Optional<Game> findById(Long id);
 
     Game save(Game game);
+
+    boolean deleteById(Long id);
 }
