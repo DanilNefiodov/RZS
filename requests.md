@@ -1,4 +1,4 @@
-# Приклади запитів — Магазин відеоігор (заняття 1.1)
+# Приклади запитів — Магазин відеоігор (заняття 1.2, повний CRUD)
 
 Бекенд має бути запущений (порт 8080):
 
@@ -6,18 +6,34 @@
 ./mvnw spring-boot:run
 ```
 
-На цьому етапі є лише **два GET-ендпоінти** (читання). Початкові ігри додаються
-в коді — у класі `GameSeeder`.
+Команди нижче запускати **з папки проєкту**. Кожна команда — в один рядок, тож вона
+працює і в bash, і в `cmd`, і в PowerShell. У PowerShell пишіть `curl.exe` замість `curl`.
+
+| # | Операція | Метод і шлях | Успіх | Помилка |
+|---|---|---|---|---|
+| 1 | Перелік ігор | `GET /api/games` | 200 | — |
+| 2 | Фільтр за жанром | `GET /api/games?genre=...` | 200 | — |
+| 3 | Одна гра | `GET /api/games/{id}` | 200 | 404 |
+| 4 | Створити | `POST /api/games` | 201 | — |
+| 5 | Оновити | `PUT /api/games/{id}` | 200 | 404 |
+| 6 | Видалити | `DELETE /api/games/{id}` | 204 | 404 |
+
+> **Кирилиця і Windows.** Якщо писати кирилицю прямо в команді `curl`, Windows може
+> передати її не в UTF-8 — сервер відповість `400` або нічого не знайде. Тому:
+> - у фільтрі жанр закодовано (`%D0%A8%D1%83%D1%82%D0%B5%D1%80` = `Шутер`);
+>   у браузері можна писати просто `?genre=Шутер` — він закодує сам;
+> - тіла запитів `POST`/`PUT` лежать у файлах [`requests/new-game.json`](requests/new-game.json)
+>   та [`requests/update-game.json`](requests/update-game.json) (UTF-8).
 
 ---
 
-## 1. Перелік ігор (картки)
+## 1. Перелік ігор
 
 ```bash
 curl http://localhost:8080/api/games
 ```
 
-Очікувана відповідь (скорочено):
+Очікувано `200` і масив карток:
 ```json
 [
   { "id": 1, "title": "S.T.A.L.K.E.R. 2: Heart of Chornobyl", "platform": "PC", "price": 1299.00, "coverUrl": "/covers/stalker-2.jpg" },
@@ -27,13 +43,24 @@ curl http://localhost:8080/api/games
 
 ---
 
-## 2. Одна гра з деталями
+## 2. Фільтр за жанром
+
+```bash
+curl "http://localhost:8080/api/games?genre=%D0%A8%D1%83%D1%82%D0%B5%D1%80"
+```
+
+Очікувано `200` і лише шутери (S.T.A.L.K.E.R. 2 та Metro Exodus). Регістр не важливий:
+`шутер` і `Шутер` дають той самий результат. Без параметра `genre` повертаються всі ігри.
+
+---
+
+## 3. Одна гра з деталями
 
 ```bash
 curl http://localhost:8080/api/games/1
 ```
 
-Очікувана відповідь:
+Очікувано `200`:
 ```json
 {
   "id": 1,
@@ -49,12 +76,53 @@ curl http://localhost:8080/api/games/1
 }
 ```
 
----
-
-## 3. Гра, якої немає → 404
-
+Неіснуюча гра → `404`:
 ```bash
 curl -i http://localhost:8080/api/games/999
 ```
 
-Очікувано: перший рядок `HTTP/1.1 404`.
+---
+
+## 4. Створити гру → 201
+
+```bash
+curl -i -X POST http://localhost:8080/api/games -H "Content-Type: application/json" --data-binary "@requests/new-game.json"
+```
+
+Очікувано `HTTP/1.1 201` і створена гра з новим `id` (після стартових п'яти — `6`):
+```json
+{ "id": 6, "title": "Hollow Knight", "developer": "Team Cherry", "price": 349.00, "...": "..." }
+```
+
+`id` у тілі запиту не передається — його призначає сервер.
+
+---
+
+## 5. Оновити гру → 200 / 404
+
+```bash
+curl -i -X PUT http://localhost:8080/api/games/2 -H "Content-Type: application/json" --data-binary "@requests/update-game.json"
+```
+
+Очікувано `HTTP/1.1 200` і гра з тим самим `id: 2`, але новими полями
+(`"title": "Metro Exodus Gold Edition"`, `"price": 899.00`).
+
+Оновлення неіснуючої гри → `404`:
+```bash
+curl -i -X PUT http://localhost:8080/api/games/999 -H "Content-Type: application/json" --data-binary "@requests/update-game.json"
+```
+
+---
+
+## 6. Видалити гру → 204 / 404
+
+```bash
+curl -i -X DELETE http://localhost:8080/api/games/5
+```
+
+Очікувано `HTTP/1.1 204` без тіла. Повторне видалення тієї ж гри (або неіснуючої) → `404`:
+```bash
+curl -i -X DELETE http://localhost:8080/api/games/5
+```
+
+> Дані зберігаються в пам'яті: після перезапуску застосунку знову будуть лише 5 стартових ігор.
