@@ -6,6 +6,7 @@ import com.ua.gamestore.repository.GameRepository;
 import com.ua.gamestore.service.mapper.GameMapper;
 import com.ua.gamestore.web.dto.GameCardDto;
 import com.ua.gamestore.web.dto.GameDetailDto;
+import com.ua.gamestore.web.dto.GameRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,8 +27,11 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public List<GameCardDto> findAll() {
-        return repository.findAll().stream()
+    public List<GameCardDto> findAll(String genre) {
+        List<Game> games = (genre == null || genre.isBlank())
+                ? repository.findAll()
+                : repository.findByGenre(genre);
+        return games.stream()
                 .map(mapper::toCard)
                 .toList();
     }
@@ -37,5 +41,28 @@ public class GameServiceImpl implements GameService {
         Game game = repository.findById(id)
                 .orElseThrow(() -> new GameNotFoundException(id));
         return mapper.toDetail(game);
+    }
+
+    @Override
+    public GameDetailDto create(GameRequest request) {
+        Game game = mapper.toDomain(request);
+        game.setId(null);                      // id призначить репозиторій
+        return mapper.toDetail(repository.save(game));
+    }
+
+    @Override
+    public GameDetailDto update(Long id, GameRequest request) {
+        repository.findById(id)
+                .orElseThrow(() -> new GameNotFoundException(id));
+        Game game = mapper.toDomain(request);
+        game.setId(id);                        // зберігаємо той самий id
+        return mapper.toDetail(repository.save(game));
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (!repository.deleteById(id)) {
+            throw new GameNotFoundException(id);
+        }
     }
 }
