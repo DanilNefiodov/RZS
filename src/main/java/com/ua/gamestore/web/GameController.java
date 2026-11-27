@@ -4,6 +4,7 @@ import com.ua.gamestore.service.GameService;
 import com.ua.gamestore.web.dto.GameCardDto;
 import com.ua.gamestore.web.dto.GameDetailDto;
 import com.ua.gamestore.web.dto.GameRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -50,12 +51,12 @@ public class GameController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public GameDetailDto create(@RequestBody GameRequest request) {
+    public GameDetailDto create(@Valid @RequestBody GameRequest request) {
         return gameService.create(request);
     }
 
     @PutMapping("/{id}")
-    public GameDetailDto update(@PathVariable Long id, @RequestBody GameRequest request) {
+    public GameDetailDto update(@PathVariable Long id, @Valid @RequestBody GameRequest request) {
         return gameService.update(id, request);
     }
 

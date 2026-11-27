@@ -93,6 +93,20 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.developer").value("Team Cherry"));
     }
 
+    @Test
+    void createInvalidReturns400AndCreatesNothing() throws Exception {
+        mockMvc.perform(post("/api/games")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "title": "", "developer": "X", "price": -10,
+                                  "platform": "PC", "genre": "", "ageRating": 21 }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/games"))
+                .andExpect(jsonPath("$.length()").value(5));
+    }
+
     // ---------- PUT ----------
 
     @Test

@@ -17,6 +17,7 @@
 | 4 | Створити | `POST /api/games` | 201 | — |
 | 5 | Оновити | `PUT /api/games/{id}` | 200 | 404 |
 | 6 | Видалити | `DELETE /api/games/{id}` | 204 | 404 |
+| 7 | Невалідні дані | `POST` / `PUT` з порушенням правил | — | 400 |
 
 > **Кирилиця і Windows.** Якщо писати кирилицю прямо в команді `curl`, Windows може
 > передати її не в UTF-8 — сервер відповість `400` або нічого не знайде. Тому:
@@ -124,5 +125,27 @@ curl -i -X DELETE http://localhost:8080/api/games/5
 ```bash
 curl -i -X DELETE http://localhost:8080/api/games/5
 ```
+
+---
+
+## 7. Невалідні дані → 400
+
+Тіло `POST`/`PUT` перевіряється (`@Valid` у контролері, правила в `GameRequest`):
+
+| Поле | Правило |
+|---|---|
+| `title`, `developer`, `platform`, `genre` | не порожні (`@NotBlank`) |
+| `price` | обов'язкова й більша за 0 (`@NotNull`, `@Positive`) |
+| `releaseYear` | більший за 0 (`@Positive`) |
+| `ageRating` | від 0 до 18 (`@Min`, `@Max`) |
+
+Файл [`requests/invalid-game.json`](requests/invalid-game.json) порушує одразу чотири правила
+(порожні назва й жанр, від'ємна ціна, вік 21):
+
+```bash
+curl -i -X POST http://localhost:8080/api/games -H "Content-Type: application/json" --data-binary "@requests/invalid-game.json"
+```
+
+Очікувано `HTTP/1.1 400`, гра **не** створюється.
 
 > Дані зберігаються в пам'яті: після перезапуску застосунку знову будуть лише 5 стартових ігор.
