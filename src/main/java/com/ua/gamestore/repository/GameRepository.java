@@ -21,4 +21,7 @@ public interface GameRepository {
     Game save(Game game);
 
     boolean deleteById(Long id);
+
+    /** Видалити всі ігри (потрібно для чистого старту в інтеграційних тестах). */
+    void deleteAll();
 }
